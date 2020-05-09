@@ -1,0 +1,41 @@
+{
+    "name": "linlancer/laravel-operation-log",
+    "description": "a simple tool for eloquent model to record changelog or user operation log",
+    "type": "composer-plugin",
+    "require": {
+        "illuminate/database": "7.*",
+        "doctrine/dbal": "2.10.2",
+        "illuminate/events": "7.10.3",
+        "illuminate/http": "^7.10"
+    },
+    "require-dev": {
+        "illuminate/database": "7.*",
+        "doctrine/dbal": "2.10.2",
+        "illuminate/events": "7.10.3",
+        "phpunit/phpunit": "^7.0"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "linlancer",
+            "email": "89662208@qq.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "LinLancer\\Laravel\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "LinLancer\\Laravel\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "LinLancer\\Laravel\\OperationLoggerServiceProvider"
+            ]
+        }
+    }
+}
