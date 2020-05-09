@@ -15,7 +15,7 @@ interface EventHandler
 {
     public function handle(string $event, EloquentModel $model, string $clientIp = '');
 
-    public function getChangeContent(EloquentModel $model, $original = []);
+    public function loadChangeContent(EloquentModel $model);
 
     public function getEventLog():array;
 }

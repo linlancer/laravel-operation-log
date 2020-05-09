@@ -19,12 +19,11 @@ class OperationLoggerServiceProvider extends ServiceProvider
             __DIR__.'/../config/operation_logger.php',
             'operation_logger'
         );
-        EloquentModel::observe(ModelTriggerEvent::class);
     }
 
     public function boot():void
     {
-
+        EloquentModel::observe(ModelTriggerEvent::class);
     }
 
 }

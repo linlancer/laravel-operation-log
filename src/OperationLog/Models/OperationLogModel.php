@@ -13,7 +13,7 @@ use LinLancer\Laravel\EloquentModel;
 class OperationLogModel extends EloquentModel
 {
     public $table = 'operation_log';
-
+    public $primaryKey;
     public $fillable = [
         'trigger_class',
         'associated_id',
