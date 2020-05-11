@@ -12,8 +12,6 @@ use LinLancer\Laravel\EloquentModel;
 
 class OperationLogModel extends EloquentModel
 {
-    public $table = 'operation_log';
-    public $primaryKey;
     public $fillable = [
         'trigger_class',
         'associated_id',
@@ -26,5 +24,11 @@ class OperationLogModel extends EloquentModel
 
     public $timestamps = false;
 
+    public function __construct(array $attributes = [])
+    {
+        parent::__construct($attributes);
+        $this->table = config('operation_logger.log_table_name');
+        $this->connection = config('operation_logger.log_connection');
+    }
 
 }

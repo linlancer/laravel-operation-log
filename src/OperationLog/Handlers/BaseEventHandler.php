@@ -15,6 +15,8 @@ use Doctrine\DBAL\Types\Types;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
 use LinLancer\Laravel\EloquentModel;
+use LinLancer\Laravel\OperationLog\Comment\ColumnComment;
+use LinLancer\Laravel\OperationLog\Models\OperationLogModel;
 use LinLancer\Laravel\OperationLogger;
 
 class BaseEventHandler implements EventHandler
@@ -56,12 +58,14 @@ class BaseEventHandler implements EventHandler
 
     protected $changeContent;
 
-    public function __construct(MySQL57Platform $mySQL57Platform)
+    protected $operationLogModel;
+
+    public function __construct(MySQL57Platform $mySQL57Platform, OperationLogModel $operationLogModel)
     {
         //数据库管理器
         $this->schema = $this->getSchemaManager();
         $this->mySQL57Platform = $mySQL57Platform;
-
+        $this->operationLogModel = $operationLogModel;
     }
 
     public function handle(string $event, EloquentModel $model, string $clientIp = '')
@@ -87,8 +91,8 @@ class BaseEventHandler implements EventHandler
                 break;
 
         }
-        dump($this->getEventLog());
-
+        $log = $this->getEventLog();
+        $this->operationLogModel->create($log);
     }
 
     public function loadChangeContent(EloquentModel $model)
@@ -126,8 +130,8 @@ class BaseEventHandler implements EventHandler
                 $column = $columns[$field];
                 $type = $column->getType()->getName();
                 $comment = $column->getComment();
-                $fieldName = explode(' ', $comment);
-                $fieldName = reset($fieldName);//该字段的键名
+                $fieldName = ColumnComment::parse($comment)->getColumnName();
+                $fieldEnum = ColumnComment::parse($comment)->getEnumeration();
                 switch ($type) {
                     //数值型
                     case Types::INTEGER:
@@ -158,9 +162,9 @@ class BaseEventHandler implements EventHandler
 
                 $before = '';
                 if (isset($original[$field]))
-                    $before = $model->getFormatAttributeValue($field, $original[$field]);
+                    $before = $model->getFormatAttributeValue($field, $original[$field], $fieldEnum);
 
-                $after = is_null($value) ? null : $model->getFormatAttributeValue($field, $value);
+                $after = is_null($value) ? null : $model->getFormatAttributeValue($field, $value, $fieldEnum);
                 $changeContent = $before ? '【%s】由 %s 变为： %s；'.PHP_EOL : '【%s】更新为：%s%s；'.PHP_EOL;
                 if ($before != $after && !is_null($after))
                     $changeContents .= sprintf($changeContent, $fieldName, $before, $after);

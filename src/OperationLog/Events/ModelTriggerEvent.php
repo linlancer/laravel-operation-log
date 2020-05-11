@@ -27,23 +27,26 @@ class ModelTriggerEvent extends Event
 
     public function updated(EloquentModel $obj)
     {
-        echo $this->clientIp.'数据已更新'.PHP_EOL;
+//        echo $this->clientIp.'数据已更新'.PHP_EOL;
+        $this->baseEventHandler->handle('updated', $obj, $this->clientIp);
     }
 
     public function created(EloquentModel $obj)
     {
-        echo $this->clientIp.'数据已添加'.PHP_EOL;
+//        echo $this->clientIp.'数据已添加'.PHP_EOL;
         $this->baseEventHandler->handle('created', $obj, $this->clientIp);
     }
 
     public function deleted(EloquentModel $obj)
     {
-        echo $this->clientIp.'数据已删除'.PHP_EOL;
+//        echo $this->clientIp.'数据已删除'.PHP_EOL;
+        $this->baseEventHandler->handle('deleted', $obj, $this->clientIp);
     }
 
     public function forceDeleted(EloquentModel $obj)
     {
-        echo $this->clientIp.'强制删除'.PHP_EOL;
+//        echo $this->clientIp.'强制删除'.PHP_EOL;
+        $this->baseEventHandler->handle('forceDeleted', $obj, $this->clientIp);
     }
 
 }
