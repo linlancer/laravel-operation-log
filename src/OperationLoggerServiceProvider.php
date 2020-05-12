@@ -7,8 +7,10 @@
  */
 namespace LinLancer\Laravel;
 
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use LinLancer\Laravel\OperationLog\Events\ModelTriggerEvent;
+use LinLancer\Laravel\OperationLog\Models\OperationLogModel;
 
 class OperationLoggerServiceProvider extends ServiceProvider
 {
@@ -24,6 +26,24 @@ class OperationLoggerServiceProvider extends ServiceProvider
     public function boot():void
     {
         EloquentModel::observe(ModelTriggerEvent::class);
+        if (config('operation_logger.short_route', false))
+            $this->initOperationLoggerRoute();
     }
 
+    public function initOperationLoggerRoute()
+    {
+        $shortTags = array_filter(array_column(config('operation_logger.register_class'), 'short_tag_en'));
+        Route::group([
+            'prefix' => config('operation_logger.route_prefix'),
+            'middleware' => config('operation_logger.route_middleware')
+        ],
+            function() use ($shortTags) {
+                $operationLogModel = new OperationLogModel;
+                foreach ($shortTags as $shortTag) {
+                    Route::get($shortTag . '/{bizCode}', function ($bizCode) use ($operationLogModel, $shortTag) {
+                        return $operationLogModel->getLogRecord($shortTag, $bizCode);
+                    });
+                }
+            });
+    }
 }

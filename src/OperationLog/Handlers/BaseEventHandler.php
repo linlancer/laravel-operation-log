@@ -44,6 +44,10 @@ class BaseEventHandler implements EventHandler
 
     protected $shortTagMapping = [];
 
+    protected $taggedFieldMapping = [];
+
+    protected $relatedKeyMapping = [];
+
     protected $event;
 
     protected $userId;
@@ -54,11 +58,15 @@ class BaseEventHandler implements EventHandler
 
     protected $associatedId;
 
+    protected $associatedValue;
+
     protected $eventDescription;
 
     protected $changeContent;
 
     protected $operationLogModel;
+
+    protected $ignoreList;
 
     public function __construct(MySQL57Platform $mySQL57Platform, OperationLogModel $operationLogModel)
     {
@@ -66,6 +74,7 @@ class BaseEventHandler implements EventHandler
         $this->schema = $this->getSchemaManager();
         $this->mySQL57Platform = $mySQL57Platform;
         $this->operationLogModel = $operationLogModel;
+        $this->ignoreList = array_unique(array_merge(self::IGNORE_LIST, config('operation_logger.ignore_list')));
     }
 
     public function handle(string $event, EloquentModel $model, string $clientIp = '')
@@ -75,6 +84,7 @@ class BaseEventHandler implements EventHandler
         $this->clientIp = $clientIp;
         $this->triggerClass = get_class($model);
         $this->shortTagMapping = $this->getModelShortTagMapping();
+        $this->associatedValue = $model->{$this->relatedKeyMapping[$this->triggerClass]} ?? '';
         /**
          * @var OperationLogger $model
          */
@@ -99,8 +109,8 @@ class BaseEventHandler implements EventHandler
     {
         $original = $model->getOriginal();
         $changes = $model->getChanges();
-        //忽略清单 暂时这么操作
-        $ignoreList = self::IGNORE_LIST;
+        //忽略清单
+        $ignoreList = $this->ignoreList;
 
         //完整表名
         $fullTable = $model->getConnection()->getTablePrefix() . $model->getTable();
@@ -170,7 +180,15 @@ class BaseEventHandler implements EventHandler
                     $changeContents .= sprintf($changeContent, $fieldName, $before, $after);
             }
         }
-        $operationDescription = '【%s 了 %s】';
+
+        $taggedColumn = $columns[$this->taggedFieldMapping[$this->triggerClass]] ?? null;
+        $taggedContent = '';
+        if (!empty($taggedColumn)) {
+            $taggedColumnName = ColumnComment::parse($taggedColumn->getComment())->getColumnName();
+            $taggedFieldValue = $model->{$this->taggedFieldMapping[$this->triggerClass]} ?? '';
+            $taggedContent = sprintf('【%s】%s ', $taggedColumnName, $taggedFieldValue);
+        }
+        $operationDescription = '【%s 了 %s】' . $taggedContent;
         $operationName = self::EVENT_MAPPING[$this->event] ?? '操作';
         $operationDescription = sprintf($operationDescription, $operationName, $objectName);
         $this->eventDescription = $operationDescription;
@@ -182,6 +200,7 @@ class BaseEventHandler implements EventHandler
         return [
             'trigger_class' => $this->triggerClass,
             'associated_id' => $this->associatedId,
+            'associated_value' => $this->associatedValue,
             'user_id' => $this->userId,
             'client_ip' => $this->clientIp,
             'trigger_time' => date('Y-m-d H:i:s'),
@@ -222,6 +241,10 @@ class BaseEventHandler implements EventHandler
         return $detail;
     }
 
+    /**
+     * 初始化标识字段和获取短标记映射
+     * @return array
+     */
     private function getModelShortTagMapping()
     {
         $config = config('operation_logger');
@@ -229,10 +252,34 @@ class BaseEventHandler implements EventHandler
         $mapping = [];
         foreach ( $registerClasses as $registerClass) {
             $mapping[$registerClass['class_name']] = $registerClass['short_tag'];
+            
+            if (isset($registerClass['tagged_field']) && !empty($registerClass['tagged_field']))
+                $this->taggedFieldMapping[$registerClass['class_name']] = $registerClass['tagged_field'];
+
+            if (isset($registerClass['related_key']) && !empty($registerClass['related_key']))
+                $this->relatedKeyMapping[$registerClass['class_name']] = $registerClass['related_key'];
+            
+            //关联子模型也读取
+            if (isset($registerClass['related_with']) && !empty($registerClass['related_with'])) {
+                foreach ($registerClass['related_with'] as $related) {
+                    $mapping[$related['class_name']] = $related['short_tag'];
+
+                    if (isset($related['tagged_field']) && !empty($related['tagged_field']))
+                        $this->taggedFieldMapping[$related['class_name']] = $related['tagged_field'];
+
+                    if (isset($related['related_key']) && !empty($related['related_key']))
+                        $this->relatedKeyMapping[$related['class_name']] = $related['related_key'];
+                }
+            }
         }
         return $mapping;
     }
 
+    /**
+     * 获取数据库中的表名
+     * @param Table $tableDetail
+     * @return mixed
+     */
     private function getTableNameFromDbal(Table $tableDetail)
     {
         $operationObjectName = $tableDetail->getComment();

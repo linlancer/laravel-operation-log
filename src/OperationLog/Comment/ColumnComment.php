@@ -46,6 +46,8 @@ class ColumnComment
                 break;
             }
         }
+        if (empty($self->column))
+            $self->column = $rawComment;
         return $self;
     }
 
