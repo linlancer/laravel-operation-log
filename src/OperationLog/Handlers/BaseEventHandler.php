@@ -84,7 +84,7 @@ class BaseEventHandler implements EventHandler
         $this->clientIp = $clientIp;
         $this->triggerClass = get_class($model);
         $this->shortTagMapping = $this->getModelShortTagMapping();
-        $this->associatedValue = $model->{$this->relatedKeyMapping[$this->triggerClass]} ?? '';
+        $this->associatedValue = $model->{$this->relatedKeyMapping[$this->triggerClass]  ?? ''} ?? '';
         /**
          * @var OperationLogger $model
          */
@@ -181,11 +181,11 @@ class BaseEventHandler implements EventHandler
             }
         }
 
-        $taggedColumn = $columns[$this->taggedFieldMapping[$this->triggerClass]] ?? null;
+        $taggedColumn = $columns[$this->taggedFieldMapping[$this->triggerClass] ?? ''] ?? null;
         $taggedContent = '';
         if (!empty($taggedColumn)) {
             $taggedColumnName = ColumnComment::parse($taggedColumn->getComment())->getColumnName();
-            $taggedFieldValue = $model->{$this->taggedFieldMapping[$this->triggerClass]} ?? '';
+            $taggedFieldValue = $model->{$this->taggedFieldMapping[$this->triggerClass]  ?? ''};
             $taggedContent = sprintf('【%s】%s ', $taggedColumnName, $taggedFieldValue);
         }
         $operationDescription = '【%s 了 %s】' . $taggedContent;
