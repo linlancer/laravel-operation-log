@@ -28,6 +28,15 @@ class OperationLoggerServiceProvider extends ServiceProvider
         EloquentModel::observe(ModelTriggerEvent::class);
         if (config('operation_logger.short_route', false))
             $this->initOperationLoggerRoute();
+        if ($this->app->runningInConsole()) {
+            if ($this->app instanceof LumenApplication) {
+                $this->app->configure('operation_logger');
+            } else {
+                $this->publishes([
+                    __DIR__.'/../config/operation_logger.php' => config_path('operation_logger.php'),
+                ], 'config');
+            }
+        }
     }
 
     public function initOperationLoggerRoute()
