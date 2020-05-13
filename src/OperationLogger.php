@@ -9,5 +9,5 @@ namespace LinLancer\Laravel;
 
 interface OperationLogger
 {
-    public function getCurrentUserId():int;
+    public function getCurrentUserId();
 }

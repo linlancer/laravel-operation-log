@@ -34,9 +34,9 @@ class OperationLoggerServiceProvider extends ServiceProvider
     {
         $shortTags = array_filter(array_column(config('operation_logger.register_class'), 'short_tag_en'));
         Route::group([
-            'prefix' => config('operation_logger.route_prefix'),
-            'middleware' => config('operation_logger.route_middleware')
-        ],
+                'prefix' => config('operation_logger.route_prefix'),
+                'middleware' => config('operation_logger.route_middleware')
+            ],
             function() use ($shortTags) {
                 $operationLogModel = new OperationLogModel;
                 foreach ($shortTags as $shortTag) {

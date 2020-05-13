@@ -16,6 +16,19 @@ return [
     'log_connection' => 'mysql',
     //操作记录返回的排序值
     'order_by' => 'asc',
+    //关联的用户表
+    'related_user_model' => [
+        'class_name' => \App\Models\Erp\Models\ErpMemberModel::class,
+        'foreign_key' => 'user_id',
+        'owner_key' => 'id',
+    ],
+    //用户表中所要读取的字段  ownerkey必填入
+    'select_field_from_user_model' => [
+        'id',
+        'member_name',
+        'uuid',
+        'job_id',
+    ],
     //注册开启日志记录的模型类
     'register_class' => [
         [

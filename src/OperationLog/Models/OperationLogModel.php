@@ -23,6 +23,11 @@ class OperationLogModel extends EloquentModel
         'event_desc',
         'change_content',
     ];
+    public $hidden = [
+        'trigger_class',
+        'associated_id',
+        'associated_value',
+    ];
 
     public $timestamps = false;
 
@@ -35,16 +40,18 @@ class OperationLogModel extends EloquentModel
     
     public function userInfo()
     {
-        return $this->belongsTo(...config('operation_logger.related_user_model'));
+        return $this->belongsTo(...array_values(config('operation_logger.related_user_model')));
     }
 
     /**
-     * 根据类名和主键获取日志记录
+     * 鑾峰彇鏃ュ織璁板綍
      * @param $className
      * @param $primaryId
+     * @return Collection
      */
     public function getLogRecord($className, $primaryId)
     {
+        $withRelation = 'userInfo:'.implode(',', config('operation_logger.select_field_from_user_model'));
         $configs = collect(config('operation_logger.register_class'));
         $mapping = [];
         foreach ($configs as $config) {
@@ -63,6 +70,7 @@ class OperationLogModel extends EloquentModel
          */
         $records = $this->where('trigger_class', $className)
             ->where('associated_id', $primaryId)
+            ->with($withRelation)
             ->get();
         if ($records->isEmpty())
             return $records;
@@ -73,6 +81,7 @@ class OperationLogModel extends EloquentModel
          */
         $relatedRecords = $this->where('associated_value', $records->first()->associated_value)
             ->whereIn('trigger_class', $relations)
+            ->with($withRelation)
             ->get();
         $mergeCollections = $records->merge($relatedRecords);
         if (config('operation_logger.order_by', 'asc') === 'asc')
