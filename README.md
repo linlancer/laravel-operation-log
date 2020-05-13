@@ -19,9 +19,10 @@ A simple logger  for  Eloquent Model to record changelog or user operation log
   composer require linlancer/laravel-operation-log
 ```
 * 基类模型需继承自 LinLancer\Laravel\EloquentModel; 并且实现 getCurrentUserId方法 用于识别当前用户
+* 任何模型子类要开启自动记录 都要实现 OperationLogger接口
 # Usage
 配置如下图
-```
+```php
 [
     //日志短路由的前缀
     'route_prefix' => '',
@@ -82,23 +83,23 @@ A simple logger  for  Eloquent Model to record changelog or user operation log
     ],
 ];
 ```
-** 如果没有优化可读性的话 想像一下日志中记录的是 
+#### 如果没有优化可读性的话 想像一下日志中记录的是 
 ```
  status由 3 变成 5
 ```
 那这个日志就没有存在的意义了
-系统中关于字段名和枚举值的可读性转换做了优化相关规则如下：
-字段名称和枚举值的映射采用的是如下的优先级序：
-1  读取模型中已有的getSomeAttribute方法所返回的值
-2  读取模型中formatSomeAttribute方法所返回的值（如果前期没有用到getSomeAttribute的方法 此时加入会导致返回结果产生变化，可能会对业务产生影响 所以如果不想影响现有业务 也可以使用 formatSomeAttribute方法来替代）
-3  如果都没有设置  则会按照推荐的注释标准 去表中读取对应的枚举值
+系统中关于字段名和枚举值的可读性转换做了优化相关,字段名称和枚举值的映射采用的是如下的优先级序：
+
+1. 读取模型中已有的getSomeAttribute方法所返回的值
+2. 读取模型中formatSomeAttribute方法所返回的值（如果前期没有用到getSomeAttribute的方法 此时加入会导致返回结果产生变化，可能会对业务产生影响 所以如果不想影响现有业务 也可以使用 formatSomeAttribute方法来替代）
+3. 如果都没有设置  则会按照推荐的注释标准 去表中读取对应的枚举值
 
 # Standard of annotation
 数据库表名  读取空格前的所有字符作为操作对象名  如果设置了 short_tag则取用short_tag
 字段名 字段名的读法是按照读取第一个冒号（中英文模式都支持）、或空格前的字符作为字段名
 枚举值 枚举值一般采用 值-描述分隔符的形式 分隔符支持 中英文模式下的逗号和分号 （需要注意的是 需要同一种语言模式下的同一种分隔符才能生效）
 示例如下
-```
+```mysql
 CREATE TABLE `hp_purchase_account` (
   `create_user` varchar(32) NOT NULL DEFAULT '' COMMENT '创建者',//字段名为 创建者
   `create_user_id` varchar(32) NOT NULL DEFAULT '' COMMENT '创建者:uuid',//字段名为创建者  枚举值为空
