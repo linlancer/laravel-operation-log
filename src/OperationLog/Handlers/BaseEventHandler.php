@@ -14,6 +14,7 @@ use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Types\Types;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schema;
+use LinLancer\Laravel\Config;
 use LinLancer\Laravel\EloquentModel;
 use LinLancer\Laravel\OperationLog\Comment\ColumnComment;
 use LinLancer\Laravel\OperationLog\Models\OperationLogModel;
@@ -90,17 +91,55 @@ class BaseEventHandler implements EventHandler
          */
         $this->userId = $model->getCurrentUserId();
         $this->loadChangeContent($model);
-        switch ($event) {
-            case 'updated':
-                break;
-            case 'created':
-                break;
-            case 'deleted':
-                break;
-            case 'forceDeleted':
-                break;
+        $log = $this->getEventLog();
+        $this->operationLogModel->create($log);
+    }
 
+    /**
+     * 手动记录事件
+     * @param string        $event
+     * @param EloquentModel $model
+     * @param string        $clientIp
+     * @param string        $desc
+     */
+    public function handleManually(string $event, EloquentModel $model, string $clientIp = '', $desc = '')
+    {
+        $this->event = $event;
+        $this->associatedId = $model->{$model->getKeyName()};
+        $this->clientIp = $clientIp;
+        $this->triggerClass = get_class($model);
+        $this->shortTagMapping = $this->getModelShortTagMapping();
+        $this->associatedValue = $model->{$this->relatedKeyMapping[$this->triggerClass]  ?? ''} ?? '';
+
+        //完整表名
+        $fullTable = $model->getConnection()->getTablePrefix() . $model->getTable();
+
+        $tableDetail = $this->getTableDetailWithCache($fullTable);
+
+        $objectName = $this->getTableNameFromDbal($tableDetail);
+
+        $objectName = $this->shortTagMapping[$this->triggerClass] ?? $objectName;
+
+        $columns = $tableDetail->getColumns();
+
+        $taggedColumn = $columns[$this->taggedFieldMapping[$this->triggerClass] ?? ''] ?? null;
+        $taggedContent = '';
+
+        if (!empty($taggedColumn)) {
+            $taggedColumnName = ColumnComment::parse($taggedColumn->getComment())->getColumnName();
+            $taggedFieldValue = $model->{$this->taggedFieldMapping[$this->triggerClass]  ?? ''};
+            $taggedContent = sprintf('【%s】%s ', $taggedColumnName, $taggedFieldValue);
         }
+        $operationDescription = '【%s 了 %s】' . $taggedContent . $desc;
+        $operationName = self::EVENT_MAPPING[$this->event] ?? '操作';
+        $operationDescription = sprintf($operationDescription, $operationName, $objectName);
+        $this->eventDescription = $operationDescription;
+        $this->changeContent = '';
+        /**
+         * @var OperationLogger $model
+         */
+        $this->userId = $model->getCurrentUserId();
+
         $log = $this->getEventLog();
         $this->operationLogModel->create($log);
     }
@@ -247,31 +286,9 @@ class BaseEventHandler implements EventHandler
      */
     private function getModelShortTagMapping()
     {
-        $config = config('operation_logger');
-        $registerClasses = $config['register_class'];
-        $mapping = [];
-        foreach ( $registerClasses as $registerClass) {
-            $mapping[$registerClass['class_name']] = $registerClass['short_tag'];
-            
-            if (isset($registerClass['tagged_field']) && !empty($registerClass['tagged_field']))
-                $this->taggedFieldMapping[$registerClass['class_name']] = $registerClass['tagged_field'];
-
-            if (isset($registerClass['related_key']) && !empty($registerClass['related_key']))
-                $this->relatedKeyMapping[$registerClass['class_name']] = $registerClass['related_key'];
-            
-            //关联子模型也读取
-            if (isset($registerClass['related_with']) && !empty($registerClass['related_with'])) {
-                foreach ($registerClass['related_with'] as $related) {
-                    $mapping[$related['class_name']] = $related['short_tag'];
-
-                    if (isset($related['tagged_field']) && !empty($related['tagged_field']))
-                        $this->taggedFieldMapping[$related['class_name']] = $related['tagged_field'];
-
-                    if (isset($related['related_key']) && !empty($related['related_key']))
-                        $this->relatedKeyMapping[$related['class_name']] = $related['related_key'];
-                }
-            }
-        }
+        $mapping = Config::getMapping('class_name', 'short_tag', false);
+        $this->taggedFieldMapping = Config::getMapping('class_name', 'tagged_field');
+        $this->relatedKeyMapping = Config::getMapping('class_name', 'related_key');
         return $mapping;
     }
 

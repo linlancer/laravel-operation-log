@@ -15,7 +15,7 @@ use LinLancer\Laravel\OperationLogger;
 class TestModel extends EloquentModel implements OperationLogger
 {
 
-    public $connection = 'default';
+    public $connection = 'mysql';
 
     public $table = 'test';
 

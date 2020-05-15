@@ -29,13 +29,13 @@ class OperationLoggerServiceProvider extends ServiceProvider
         if (config('operation_logger.short_route', false))
             $this->initOperationLoggerRoute();
         if ($this->app->runningInConsole()) {
-            if ($this->app instanceof LumenApplication) {
-                $this->app->configure('operation_logger');
-            } else {
-                $this->publishes([
-                    __DIR__.'/../config/operation_logger.php' => config_path('operation_logger.php'),
-                ], 'config');
-            }
+            $this->loadMigrationsFrom([
+                __DIR__.'/../database/migrations/2020_05_13_100428_create_operation_logger_table.php'
+            ]);
+
+            $this->publishes([
+                __DIR__.'/../config/operation_logger.php' => config_path('operation_logger.php'),
+            ], 'config');
         }
     }
 

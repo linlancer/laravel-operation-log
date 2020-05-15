@@ -9,7 +9,8 @@
     "require-dev": {
         "doctrine/dbal": "2.10.*",
         "phpunit/phpunit": "^7.0",
-        "laravel/framework": "5.8.*"
+        "laravel/framework": "5.8.*",
+        "orchestra/testbench": "3.8.*"
     },
     "license": "MIT",
     "authors": [
