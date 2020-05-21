@@ -189,12 +189,12 @@ class BaseEventHandler implements EventHandler
                         break;
                     case Types::FLOAT:
                         $scale = $column->getScale();
-                        $value = round($value, $scale);
+                        $value = round(floatval($value), $scale);
                         break;
                     case Types::BIGINT:
                     case Types::DECIMAL:
                         $scale = $column->getScale();
-                        $value = number_format($value, $scale, '.', '');
+                        $value = number_format(floatval($value), $scale, '.', '');
                         break;
                     //字符型
                     case Types::STRING:
@@ -215,7 +215,7 @@ class BaseEventHandler implements EventHandler
 
                 $after = is_null($value) ? null : $model->getFormatAttributeValue($field, $value, $fieldEnum);
                 $changeContent = $before ? '【%s】由 %s 变为： %s；'.PHP_EOL : '【%s】更新为：%s%s；'.PHP_EOL;
-                if ($before != $after && !is_null($after))
+                if ($before != $after && !is_null($after) && is_string($before) && is_string($after))
                     $changeContents .= sprintf($changeContent, $fieldName, $before, $after);
             }
         }
