@@ -81,7 +81,8 @@ class ColumnComment
                 break;
             }
         }
-
+        if (empty($enumSeparator))
+            return $enumerations;
         $enumGroups = explode($enumSeparator, $rawEnum);
         foreach ($enumGroups as $enumGroup) {
             if (mb_stripos($enumGroup, $this->enumKeyValueSeparator) === false)
