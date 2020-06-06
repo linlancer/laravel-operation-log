@@ -10,11 +10,16 @@ namespace LinLancer\Laravel\OperationLog\QueryBuilder;
 
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use LinLancer\Laravel\EloquentModel;
+use LinLancer\Laravel\ModelFormArray;
 use LinLancer\Laravel\OperationLogger;
 
 class EloquentQueryBuilder extends Builder
 {
+    const TYPE_IN = 'In';
+
     private $originalGroups = [];
 
     public function update(array $values)
@@ -53,5 +58,64 @@ class EloquentQueryBuilder extends Builder
             $model = $model->syncChanges();
             $model->fireModelEventFromBuilder('updated');
         }
+    }
+
+    /**
+     * Eagerly load the relationship on a set of models.
+     *
+     * @param  array  $models
+     * @param  string  $name
+     * @param  \Closure  $constraints
+     * @return array
+     */
+    protected function eagerLoadRelation(array $models, $name, \Closure $constraints)
+    {
+        // First we will "back up" the existing where conditions on the query so we can
+        // add our eager constraints. Then we will merge the wheres that were on the
+        // query back to it in order that any where conditions might be specified.
+        $relation = $this->getRelation($name);
+
+        $relation->addEagerConstraints($models);
+
+        $constraints($relation);
+
+        if ($relation->getModel() instanceof ModelFormArray)
+            $results = $this->rpcGetCollection($relation, $name);
+        else
+            $results = $relation->getEager();
+        // Once we have the results, we just match those back up to their parent models
+        // using the relationship instance. Then we just return the finished arrays
+        // of models which have been eagerly hydrated and are readied for return.
+        return $relation->match(
+            $relation->initRelation($models, $name),
+            $results, $name
+        );
+    }
+
+    private function rpcGetCollection(Relation $relation, string $name): Collection
+    {
+        $whereCondition = $relation->getBaseQuery()->wheres;
+        $condition = $this->parseWhere($whereCondition);
+
+        $target = $relation->getModel();
+        return $target->rpcGet($name, $condition);
+    }
+
+    private function parseWhere(array $wheres)
+    {
+        $condition = [];
+        foreach ($wheres as $where) {
+            switch ($where['type']) {
+                case self::TYPE_IN:
+                    $fieldArr = explode('.', $where['column']);
+                    $condition[end($fieldArr)] = implode(',', $where['values']);
+                    break;
+                default:
+                    $fieldArr = explode('.', $where['column']);
+                    $condition[end($fieldArr)] = $where['values'];
+                    break;
+            }
+        }
+        return $condition;
     }
 }
