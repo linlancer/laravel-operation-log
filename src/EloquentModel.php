@@ -9,6 +9,7 @@
 namespace LinLancer\Laravel;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasOneOrMany;
@@ -206,4 +207,40 @@ class EloquentModel extends Model
         $methods = $this->getAllRelations('children', $this);
         return $methods->where('class', $className)->first();
     }
+
+    protected function getRelationshipFromMethod($method)
+    {
+        $relation = $this->$method();
+
+        if (! $relation instanceof Relation) {
+            if (is_null($relation)) {
+                throw new LogicException(sprintf(
+                    '%s::%s must return a relationship instance, but "null" was returned. Was the "return" keyword used?', static::class, $method
+                ));
+            }
+
+            throw new LogicException(sprintf(
+                '%s::%s must return a relationship instance.', static::class, $method
+            ));
+        }
+
+        if ($relation->getModel() instanceof ModelFormArray)
+            $results = $this->handleResults($this->rpcGetCollection($relation, $method), $relation);
+        else
+            $results = $relation->getResults();
+        return tap($results, function ($results) use ($method) {
+            $this->setRelation($method, $results);
+        });
+    }
+
+    private function handleResults(Collection $results, Relation $relation)
+    {
+        $className = get_class($relation);
+        if (stripos($className, 'many') !== false) {
+            return $results;
+        } else {
+            return $results->first();
+        }
+    }
+
 }

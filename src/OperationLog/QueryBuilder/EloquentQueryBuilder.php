@@ -92,7 +92,7 @@ class EloquentQueryBuilder extends Builder
         );
     }
 
-    private function rpcGetCollection(Relation $relation, string $name): Collection
+    public function rpcGetCollection(Relation $relation, string $name): Collection
     {
         $whereCondition = $relation->getBaseQuery()->wheres;
         $condition = $this->parseWhere($whereCondition);
@@ -112,7 +112,7 @@ class EloquentQueryBuilder extends Builder
                     break;
                 default:
                     $fieldArr = explode('.', $where['column']);
-                    $condition[end($fieldArr)] = $where['values'];
+                    $condition[end($fieldArr)] = $where['value'];
                     break;
             }
         }
