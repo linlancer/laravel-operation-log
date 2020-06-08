@@ -20,6 +20,8 @@ class EloquentQueryBuilder extends Builder
 {
     const TYPE_IN = 'In';
 
+    const TYPE_RAW = 'raw';
+
     private $originalGroups = [];
 
     public function update(array $values)
@@ -109,6 +111,14 @@ class EloquentQueryBuilder extends Builder
                 case self::TYPE_IN:
                     $fieldArr = explode('.', $where['column']);
                     $condition[end($fieldArr)] = implode(',', $where['values']);
+                    break;
+                case self::TYPE_RAW:
+                    $fieldArr = $where['sql'];
+                    if (stripos($fieldArr, '`') !== false) {
+                        $reg = '/`\w+`\./i';
+                        $fieldArr = preg_replace($reg, '', $where['sql']);
+                    }
+                    $condition['_raw'] = $fieldArr;
                     break;
                 default:
                     $fieldArr = explode('.', $where['column']);
