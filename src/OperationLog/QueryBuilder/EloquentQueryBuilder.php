@@ -96,11 +96,22 @@ class EloquentQueryBuilder extends Builder
 
     public function rpcGetCollection(Relation $relation, string $name): Collection
     {
-        $whereCondition = $relation->getBaseQuery()->wheres;
+        $baseQuery = $relation->getBaseQuery();
+        $whereCondition = $baseQuery->wheres;
         $condition = $this->parseWhere($whereCondition);
 
         $target = $relation->getModel();
-        return $target->rpcGet($name, $condition);
+
+        /**
+         * @var Collection $collections
+         */
+        $collections = $target->rpcGet($name, $condition);
+        $this->eagerLoad = $this->relationsNestedUnder($name);
+        $builder = $this->applyScopes();
+        $builder->setModel($target);
+        if ($collections->isNotEmpty())
+            return $builder->getModel()->newCollection($builder->eagerLoadRelations($collections->all()));
+        return $collections;
     }
 
     private function parseWhere(array $wheres)
