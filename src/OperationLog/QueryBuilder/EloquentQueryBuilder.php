@@ -11,6 +11,7 @@ namespace LinLancer\Laravel\OperationLog\QueryBuilder;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use LinLancer\Laravel\EloquentModel;
 use LinLancer\Laravel\ModelFormArray;
@@ -99,18 +100,24 @@ class EloquentQueryBuilder extends Builder
         $baseQuery = $relation->getBaseQuery();
         $whereCondition = $baseQuery->wheres;
         $condition = $this->parseWhere($whereCondition);
-
         $target = $relation->getModel();
-
         /**
          * @var Collection $collections
          */
         $collections = $target->rpcGet($name, $condition);
         $this->eagerLoad = $this->relationsNestedUnder($name);
-        $builder = $this->applyScopes();
-        $builder->setModel($target);
-        if ($collections->isNotEmpty())
-            return $builder->getModel()->newCollection($builder->eagerLoadRelations($collections->all()));
+
+        if ($collections->isNotEmpty()) {
+            /**
+             * @var Model $model
+             */
+            $model = $collections->first();
+            $buidler = $model->newModelQuery();
+            $buidler->setEagerLoads($this->eagerLoad);
+            $models = $buidler->eagerLoadRelations($collections->all());
+            return $model->newCollection($models);
+        }
+
         return $collections;
     }
 
