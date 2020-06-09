@@ -99,7 +99,8 @@ class EloquentQueryBuilder extends Builder
     {
         $baseQuery = $relation->getBaseQuery();
         $whereCondition = $baseQuery->wheres;
-        $condition = $this->parseWhere($whereCondition);
+        $groups = $baseQuery->groups;
+        $condition = $this->parseWhere($whereCondition, $groups);
         $target = $relation->getModel();
         /**
          * @var Collection $collections
@@ -121,7 +122,7 @@ class EloquentQueryBuilder extends Builder
         return $collections;
     }
 
-    private function parseWhere(array $wheres)
+    private function parseWhere(array $wheres, $groups = [])
     {
         $condition = [];
         foreach ($wheres as $where) {
@@ -144,6 +145,8 @@ class EloquentQueryBuilder extends Builder
                     break;
             }
         }
+        if (!empty($groups))
+            $condition['_group'] = $groups;
         return $condition;
     }
 }
