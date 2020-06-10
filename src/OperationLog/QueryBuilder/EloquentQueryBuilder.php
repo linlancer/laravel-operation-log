@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use LinLancer\Laravel\EloquentModel;
 use LinLancer\Laravel\ModelFormArray;
 use LinLancer\Laravel\OperationLogger;
@@ -24,6 +26,10 @@ class EloquentQueryBuilder extends Builder
     const TYPE_RAW = 'raw';
 
     private $originalGroups = [];
+
+    private $fromPaginator = false;
+
+    private $totalCount = 0;
 
     public function update(array $values)
     {
@@ -125,11 +131,34 @@ class EloquentQueryBuilder extends Builder
     public function getModels($columns = ['*'])
     {
         if ($this->getModel() instanceof ModelFormArray)
-            return $this->rpcGetModels($columns);
+            return $this->rpcGetModels($columns, $this->fromPaginator);
         return parent::getModels($columns);
     }
 
-    private function rpcGetModels($columns)
+    public function paginate($perPage = null, $columns = ['*'], $pageName = 'page', $page = null)
+    {
+        $page = $page ?: Paginator::resolveCurrentPage($pageName);
+
+        $perPage = $perPage ?: $this->model->getPerPage();
+
+        if ($this->getModel() instanceof ModelFormArray) {
+            $this->fromPaginator = true;
+            $results = $this->forPage($page, $perPage)->get($columns);
+            $total = $this->totalCount;
+        } else {
+            $results = ($total = $this->toBase()->getCountForPagination())
+                ? $this->forPage($page, $perPage)->get($columns)
+                : $this->model->newCollection();
+        }
+
+
+        return $this->paginator($results, $total, $perPage, $page, [
+            'path' => Paginator::resolveCurrentPath(),
+            'pageName' => $pageName,
+        ]);
+    }
+
+    private function rpcGetModels($columns, $byPage = false)
     {
         $baseQuery = $this->getQuery();
         $whereCondition = $baseQuery->wheres;
@@ -137,11 +166,23 @@ class EloquentQueryBuilder extends Builder
         $condition = $this->parseWhere($whereCondition, $groups);
         $target = $this->getModel();
         $name = $baseQuery->from;
-        /**
-         * @var Collection $collections
-         */
-        $collections = $target->rpcGet($name, $condition);
-        return $collections->all();
+
+        $collections = $byPage
+            ? $target->rpcGetByPage($name, $condition, $byPage)
+            : $target->rpcGet($name, $condition, $byPage);
+
+        if ($byPage) {
+            /**
+             * @var LengthAwarePaginator $collections
+             */
+            $this->totalCount = $collections->total();
+            return $collections->items();
+        } else {
+            /**
+             * @var Collection $collections
+             */
+            return $collections->all();
+        }
     }
 
     private function parseWhere(array $wheres, $groups = [])
