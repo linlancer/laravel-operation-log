@@ -122,6 +122,28 @@ class EloquentQueryBuilder extends Builder
         return $collections;
     }
 
+    public function getModels($columns = ['*'])
+    {
+        if ($this->getModel() instanceof ModelFormArray)
+            return $this->rpcGetModels($columns);
+        return parent::getModels($columns);
+    }
+
+    private function rpcGetModels($columns)
+    {
+        $baseQuery = $this->getQuery();
+        $whereCondition = $baseQuery->wheres;
+        $groups = $baseQuery->groups;
+        $condition = $this->parseWhere($whereCondition, $groups);
+        $target = $this->getModel();
+        $name = $baseQuery->from;
+        /**
+         * @var Collection $collections
+         */
+        $collections = $target->rpcGet($name, $condition);
+        return $collections->all();
+    }
+
     private function parseWhere(array $wheres, $groups = [])
     {
         $condition = [];
