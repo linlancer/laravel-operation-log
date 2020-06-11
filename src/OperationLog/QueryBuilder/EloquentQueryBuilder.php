@@ -25,6 +25,8 @@ class EloquentQueryBuilder extends Builder
 
     const TYPE_RAW = 'raw';
 
+    const TYPE_IN_RAW = 'InRaw';
+
     private $originalGroups = [];
 
     private $fromPaginator = false;
@@ -201,6 +203,14 @@ class EloquentQueryBuilder extends Builder
                         $fieldArr = preg_replace($reg, '', $where['sql']);
                     }
                     $condition['_raw'] = $fieldArr;
+                    break;
+                case self::TYPE_IN_RAW:
+                    $field = $where['column'];
+                    if (stripos($field, '.') !== false) {
+                        $reg = '/\w+\./i';
+                        $field = preg_replace($reg, '', $field);
+                    }
+                    $condition[$field] = implode(',', $where['values']);
                     break;
                 default:
                     $fieldArr = explode('.', $where['column']);
