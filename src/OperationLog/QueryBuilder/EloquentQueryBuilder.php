@@ -214,7 +214,10 @@ class EloquentQueryBuilder extends Builder
                     break;
                 default:
                     $fieldArr = explode('.', $where['column']);
-                    $condition[end($fieldArr)] = $where['value'];
+                    $condition[end($fieldArr)] = [
+                        $where['operator'] ?? '=',
+                        $where['value']
+                    ];
                     break;
             }
         }
