@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Str;
 use LinLancer\Laravel\EloquentModel;
 use LinLancer\Laravel\ModelFormArray;
 use LinLancer\Laravel\OperationLogger;
@@ -113,16 +114,15 @@ class EloquentQueryBuilder extends Builder
         /**
          * @var Collection $collections
          */
-        $collections = $target->rpcGet($name, $condition);
-        $this->eagerLoad = $this->relationsNestedUnder($name);
-
-        if ($collections->isNotEmpty()) {
+        $collections = $target->rpcGet($name, $condition, $baseQuery->columns);
+        $eagerLoad = $this->relationsNestedUnder($name);
+        if ($collections->isNotEmpty() && !empty($eagerLoad)) {
             /**
              * @var Model $model
              */
             $model = $collections->first();
             $buidler = $model->newModelQuery();
-            $buidler->setEagerLoads($this->eagerLoad);
+            $buidler->setEagerLoads($eagerLoad);
             $models = $buidler->eagerLoadRelations($collections->all());
             return $model->newCollection($models);
         }
@@ -170,8 +170,8 @@ class EloquentQueryBuilder extends Builder
         $name = $baseQuery->from;
 
         $collections = $byPage
-            ? $target->rpcGetByPage($name, $condition, $byPage)
-            : $target->rpcGet($name, $condition, $byPage);
+            ? $target->rpcGetByPage($name, $condition, $byPage, $baseQuery->columns)
+            : $target->rpcGet($name, $condition, $byPage, $baseQuery->columns);
 
         if ($byPage) {
             /**
