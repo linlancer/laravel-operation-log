@@ -107,7 +107,6 @@ class BaseRpcService extends YarService
     {
         $params = unserialize(base64_decode($params));
         $baseQuery = $builder->getQuery();
-        dd($params);
         foreach ($params as $key => $param) {
             switch ($key) {
                 case 'wheres':
