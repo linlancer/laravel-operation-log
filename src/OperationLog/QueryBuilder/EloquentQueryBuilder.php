@@ -107,10 +107,20 @@ class EloquentQueryBuilder extends Builder
     public function rpcGetCollection(Relation $relation, string $name): Collection
     {
         $baseQuery = $relation->getBaseQuery();
-        $whereCondition = $baseQuery->wheres;
-        $groups = $baseQuery->groups;
-        $condition = $this->parseWhere($whereCondition, $groups);
+        $condition = [
+            'wheres' => $baseQuery->wheres,
+            'columns' => $baseQuery->columns,
+            'groups' => $baseQuery->groups,
+            'orders' => $baseQuery->orders,
+            'offset' => $baseQuery->offset,
+            'limit' => $baseQuery->limit,
+            'aggregate' => $baseQuery->aggregate,
+            'bindings' => $baseQuery->getRawBindings(),
+
+        ];
+        $condition = base64_encode(serialize($condition));
         $target = $relation->getModel();
+
         /**
          * @var Collection $collections
          */
@@ -163,9 +173,18 @@ class EloquentQueryBuilder extends Builder
     private function rpcGetModels($columns, $byPage = false)
     {
         $baseQuery = $this->getQuery();
-        $whereCondition = $baseQuery->wheres;
-        $groups = $baseQuery->groups;
-        $condition = $this->parseWhere($whereCondition, $groups);
+        $condition = [
+            'wheres' => $baseQuery->wheres,
+            'columns' => $baseQuery->columns,
+            'groups' => $baseQuery->groups,
+            'orders' => $baseQuery->orders,
+            'offset' => $baseQuery->offset,
+            'limit' => $baseQuery->limit,
+            'aggregate' => $baseQuery->aggregate,
+            'bindings' => $baseQuery->getRawBindings(),
+
+        ];
+        $condition = base64_encode(serialize($condition));
         $target = $this->getModel();
         $name = $baseQuery->from;
 
@@ -185,44 +204,5 @@ class EloquentQueryBuilder extends Builder
              */
             return $collections->all();
         }
-    }
-
-    private function parseWhere(array $wheres, $groups = [])
-    {
-        $condition = [];
-        foreach ($wheres as $where) {
-            switch ($where['type']) {
-                case self::TYPE_IN:
-                    $fieldArr = explode('.', $where['column']);
-                    $condition[end($fieldArr)] = implode(',', $where['values']);
-                    break;
-                case self::TYPE_RAW:
-                    $fieldArr = $where['sql'];
-                    if (stripos($fieldArr, '`') !== false) {
-                        $reg = '/`\w+`\./i';
-                        $fieldArr = preg_replace($reg, '', $where['sql']);
-                    }
-                    $condition['_raw'] = $fieldArr;
-                    break;
-                case self::TYPE_IN_RAW:
-                    $field = $where['column'];
-                    if (stripos($field, '.') !== false) {
-                        $reg = '/\w+\./i';
-                        $field = preg_replace($reg, '', $field);
-                    }
-                    $condition[$field] = implode(',', $where['values']);
-                    break;
-                default:
-                    $fieldArr = explode('.', $where['column']);
-                    $condition[end($fieldArr)] = [
-                        $where['operator'] ?? '=',
-                        $where['value']
-                    ];
-                    break;
-            }
-        }
-        if (!empty($groups))
-            $condition['_group'] = $groups;
-        return $condition;
     }
 }

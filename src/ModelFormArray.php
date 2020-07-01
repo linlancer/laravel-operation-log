@@ -13,7 +13,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 
 interface ModelFormArray
 {
-    public function rpcGet(string $name, array $condition): Collection;
+    public function rpcGet(string $name, string $condition): Collection;
 
-    public function rpcGetByPage(string $name, array $condition): LengthAwarePaginator;
+    public function rpcGetByPage(string $name, string $condition): LengthAwarePaginator;
 }
