@@ -173,14 +173,13 @@ class BaseRpcService extends YarService
                     break;
                 case self::TYPE_IN:
                 case self::TYPE_IN_RAW:
+                default:
                     $field = $where['column'];
                     if (stripos($field, '.') !== false) {
                         $reg = '/\w+\./i';
                         $field = preg_replace($reg, '', $field);
                         $where['column'] = $field;
                     }
-                    break;
-                default:
                     break;
             }
             if (stripos($where['column'], '#') !== false) {
