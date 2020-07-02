@@ -12,13 +12,26 @@ namespace LinLancer\Laravel\RPCService;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Str;
-use LinLancer\Laravel\EloquentModel;
-use LinLancer\Laravel\ModelFormArray;
 
-class BaseRpcModel extends EloquentModel implements ModelFormArray
+trait BaseRpcTrait
 {
+    public function rpcSet(string $name, string $condition, array $values): bool
+    {
+        $name = 'rpcSet'.Str::ucfirst($name);
+        if (method_exists($this, $name)) {
+            try {
+                $resp = call_user_func_array([$this, $name], [$condition, $values]);
+            } catch (\Exception $e) {
+                return false;
+            }
 
-    public function rpcGet(string $name, array $condition): Collection
+            return boolval($resp);
+        }
+
+        return false;
+    }
+
+    public function rpcGet(string $name, string $condition): Collection
     {
         $name = 'rpc'.Str::ucfirst($name);
         if (method_exists($this, $name)) {
@@ -40,7 +53,7 @@ class BaseRpcModel extends EloquentModel implements ModelFormArray
         return new Collection([]);
     }
 
-    public function rpcGetByPage(string $name, array $condition): LengthAwarePaginator
+    public function rpcGetByPage(string $name, string $condition): LengthAwarePaginator
     {
         $name = 'rpc'.Str::ucfirst($name);
         $name .= 'ByPage';

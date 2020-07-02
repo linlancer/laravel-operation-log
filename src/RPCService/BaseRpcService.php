@@ -47,6 +47,16 @@ class BaseRpcService extends YarService
 
     /**
      * @param array $data
+     * @return mixed
+     * @throws \Exception
+     */
+    public function set($data = [])
+    {
+        return $this->rpcSet(...array_values($data));
+    }
+
+    /**
+     * @param array $data
      * @return array
      * @throws \Exception
      */
@@ -80,6 +90,22 @@ class BaseRpcService extends YarService
         return $byPage ? $builder : $builder->get()->toArray();
     }
 
+    public function rpcSet(string $table, $condition, $data)
+    {
+        if (!isset(self::TABLE_MAPPING[$table]))
+            throw new \Exception([400, '不支持此更新方法']);
+        /**
+         * @var Model $model
+         */
+        $class = self::TABLE_MAPPING[$table];
+        $model = new $class;
+
+        $builder = $model->newQuery();
+
+        $builder = $this->parseWhere($condition, $builder);
+
+        return $builder->update($data);
+    }
     /**
      * @param string $table
      * @param        $field
@@ -107,6 +133,7 @@ class BaseRpcService extends YarService
     {
         $params = unserialize(base64_decode($params));
         $baseQuery = $builder->getQuery();
+        dd($params);
         foreach ($params as $key => $param) {
             switch ($key) {
                 case 'wheres':

@@ -37,6 +37,9 @@ class EloquentQueryBuilder extends Builder
     public function update(array $values)
     {
         $model = $this->getModel();
+        if ($model instanceof ModelFormArray) {
+            return $this->rpcSetData($values);
+        }
         if ($model instanceof OperationLogger && $model->exists === false) {
             $models = $this->getModels();
             $this->beforeUpdate($models);
@@ -204,5 +207,28 @@ class EloquentQueryBuilder extends Builder
              */
             return $collections->all();
         }
+    }
+
+    private function rpcSetData($values)
+    {
+        $baseQuery = $this->getQuery();
+        $condition = [
+            'wheres' => $baseQuery->wheres,
+            'columns' => $baseQuery->columns,
+            'groups' => $baseQuery->groups,
+            'orders' => $baseQuery->orders,
+            'offset' => $baseQuery->offset,
+            'limit' => $baseQuery->limit,
+            'aggregate' => $baseQuery->aggregate,
+            'bindings' => $baseQuery->getRawBindings(),
+
+        ];
+        $condition = base64_encode(serialize($condition));
+        /**
+         * @var ModelFormArray $model
+         */
+        $model = $this->getModel();
+
+        return $model->rpcSet($baseQuery->from ?? '', $condition, $values);
     }
 }

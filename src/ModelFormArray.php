@@ -15,5 +15,7 @@ interface ModelFormArray
 {
     public function rpcGet(string $name, string $condition): Collection;
 
+    public function rpcSet(string $name, string $condition, array $values): bool;
+
     public function rpcGetByPage(string $name, string $condition): LengthAwarePaginator;
 }
