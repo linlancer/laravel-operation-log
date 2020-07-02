@@ -75,12 +75,12 @@ class BaseRpcService extends YarService
      */
     protected function rpcGet(string $table, $field, $condition, $byPage = false)
     {
-        if (!isset(self::TABLE_MAPPING[$table]))
+        if (!isset(static::TABLE_MAPPING[$table]))
             throw new \Exception([400, '不支持此方法']);
         /**
          * @var Model $model
          */
-        $class = self::TABLE_MAPPING[$table];
+        $class = static::TABLE_MAPPING[$table];
         $model = new $class;
 
         $builder = $model->newQuery();
@@ -92,12 +92,12 @@ class BaseRpcService extends YarService
 
     public function rpcSet(string $table, $condition, $data)
     {
-        if (!isset(self::TABLE_MAPPING[$table]))
+        if (!isset(static::TABLE_MAPPING[$table]))
             throw new \Exception([400, '不支持此更新方法']);
         /**
          * @var Model $model
          */
-        $class = self::TABLE_MAPPING[$table];
+        $class = static::TABLE_MAPPING[$table];
         $model = new $class;
 
         $builder = $model->newQuery();
@@ -133,7 +133,6 @@ class BaseRpcService extends YarService
     {
         $params = unserialize(base64_decode($params));
         $baseQuery = $builder->getQuery();
-        dd($params);
         foreach ($params as $key => $param) {
             switch ($key) {
                 case 'wheres':
