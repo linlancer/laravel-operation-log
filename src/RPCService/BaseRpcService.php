@@ -20,6 +20,8 @@ class BaseRpcService extends YarService
 
     const TYPE_RAW = 'raw';
 
+    const TYPE_IN = 'In';
+
     const TYPE_IN_RAW = 'InRaw';
 
     /**
@@ -169,6 +171,7 @@ class BaseRpcService extends YarService
                         $where['sql'] = $fieldStr;
                     }
                     break;
+                case self::TYPE_IN:
                 case self::TYPE_IN_RAW:
                     $field = $where['column'];
                     if (stripos($field, '.') !== false) {
