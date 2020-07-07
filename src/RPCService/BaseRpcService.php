@@ -182,7 +182,7 @@ class BaseRpcService extends YarService
                     }
                     break;
             }
-            if (stripos($where['column'], '#') !== false) {
+            if (isset($where['column']) && stripos($where['column'], '#') !== false) {
                 $where['column'] = str_replace('#', '.', $where['column']);
             }
         }
