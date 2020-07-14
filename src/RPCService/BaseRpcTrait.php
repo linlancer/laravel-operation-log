@@ -22,6 +22,8 @@ trait BaseRpcTrait
             try {
                 $resp = call_user_func_array([$this, $name], [$condition, $values]);
             } catch (\Exception $e) {
+                $pattern = '【%s】method:%s【错误信息】%s';
+                Log::error(sprintf($pattern, static::class, $name, $e->getMessage()));
                 return false;
             }
 
@@ -38,6 +40,8 @@ trait BaseRpcTrait
             try {
                 $resp = call_user_func_array([$this, $name], [$condition]);
             } catch (\Exception $e) {
+                $pattern = '【%s】method:%s【错误信息】%s';
+                Log::error(sprintf($pattern, static::class, $name, $e->getMessage()));
                 return new Collection([]);
             }
 
