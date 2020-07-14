@@ -11,6 +11,7 @@ namespace LinLancer\Laravel\RPCService;
 
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 trait BaseRpcTrait
@@ -22,8 +23,8 @@ trait BaseRpcTrait
             try {
                 $resp = call_user_func_array([$this, $name], [$condition, $values]);
             } catch (\Exception $e) {
-                $pattern = '【%s】method:%s【错误信息】%s';
-                Log::error(sprintf($pattern, static::class, $name, $e->getMessage()));
+                $pattern = '【%s】method:%s【错误信息】%s' . PHP_EOL . '【文件】%s【行号】%s【详细信息】%s';
+                Log::error(sprintf($pattern, static::class, $name, $e->getMessage(), $e->getFile(), $e->getLine(), $e->getTraceAsString()));
                 return false;
             }
 
@@ -40,8 +41,8 @@ trait BaseRpcTrait
             try {
                 $resp = call_user_func_array([$this, $name], [$condition]);
             } catch (\Exception $e) {
-                $pattern = '【%s】method:%s【错误信息】%s';
-                Log::error(sprintf($pattern, static::class, $name, $e->getMessage()));
+                $pattern = '【%s】method:%s【错误信息】%s' . PHP_EOL . '【文件】%s【行号】%s【详细信息】%s';
+                Log::error(sprintf($pattern, static::class, $name, $e->getMessage(), $e->getFile(), $e->getLine(), $e->getTraceAsString()));
                 return new Collection([]);
             }
 
